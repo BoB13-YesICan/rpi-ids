@@ -15,11 +15,12 @@ struct CANStats {
     int count = 0;
 
     int event_count = 0;
-    double event_last_timestamp = 0;
+    double last_event_timstamp = 0;
     uint8_t event_payload[8];
-    double last_normal_timestamp =0;
+    double last_normal_timestamp = 0;
 
     int suspected_count = 0;
+    uint8_t suspected_payload[8] = {0};
 
     uint8_t valid_last_data[8] = {0};
     bool is_initial_data = true;

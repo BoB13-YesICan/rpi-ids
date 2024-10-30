@@ -92,7 +92,7 @@ double get_timestamp() {
 int receive_can_frame(int s, EnqueuedCANMsg* msg) {
     bool is_first_packet = true;
     while(!done){
-	struct can_frame frame;
+	    struct can_frame frame;
 
         size_t nbytes = read(s, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
@@ -108,13 +108,13 @@ int receive_can_frame(int s, EnqueuedCANMsg* msg) {
         {
             std::lock_guard<std::mutex> lock(queueMutex);
             if(q_push(&canMsgQueue, msg)){
-		if(is_first_packet){
-			gettimeofday(&tv, NULL);  
-			start_time = tv.tv_sec + (tv.tv_usec / 1000000.0);
-			is_first_packet = false;
-		}
-		queueCondVar.notify_one();
-            }else{
+                if(is_first_packet){
+                    gettimeofday(&tv, NULL);  
+                    start_time = tv.tv_sec + (tv.tv_usec / 1000000.0);
+                    is_first_packet = false;
+                }
+                queueCondVar.notify_one();
+            } else{
                 printf("Queue is full.\n");
             }
         }
@@ -145,29 +145,30 @@ void process_can_msg(const char *log_filename){
 	    if(dequeuedMsg.timestamp - start_time <= 10){
                 fprintf(logfile_whole, " 0\n");
                 calc_periodic(dequeuedMsg.can_id, dequeuedMsg.timestamp);
-		if(check){
-		}
-	    }
-	    else if(check){
-	        fprintf(logfile_whole, " 0\n");
-		MIN_CAN_ID = get_lowest_can_id();
-		check = false;
-	    }
-	    else if (filtering_process(&dequeuedMsg)){
-		stats.event_count = -1;
+            }
+            else if(check){
+                fprintf(logfile_whole, " 0\n");
+                MIN_CAN_ID = get_lowest_can_id();
+                check = false;
+            }
+            else if (filtering_process(&dequeuedMsg)){
+                stats.event_count = -1;
+          
                 stats.prev_timediff = 0;
                 fprintf(logfile_whole, " 1\n");
+		        printf("Malicious packet! count: %d\n", mal_count++);
+            }
+            else {
+		        fprintf(logfile_whole, " 0\n");
                 
-		printf("Malicious packet! count: %d\n", mal_count++);
-            }else{
                 onCanMessageReceived(dequeuedMsg.can_id);
-		fprintf(logfile_whole, " 0\n");
+		        printf("Malicious packet! count: %d\n", mal_count++);
             }
             stats.prev_timediff = dequeuedMsg.timestamp - stats.last_timestamp;
             stats.last_timestamp = dequeuedMsg.timestamp;
             memcpy(stats.last_data, dequeuedMsg.data, sizeof(stats.last_data));
             lock.lock();
-	    fflush(logfile_whole);
+	        fflush(logfile_whole);
         }
     }
 }
@@ -175,13 +176,13 @@ void process_can_msg(const char *log_filename){
 // 저장된 CAN 메시지 출력 (디버그용)
 void debugging_dequeuedMsg(EnqueuedCANMsg* dequeuedMsg){
 	printf("Timestamp: %.6f\n", dequeuedMsg->timestamp);
-        printf("CAN ID:%03X\n",dequeuedMsg->can_id);
-        printf("DLC: %d\n", dequeuedMsg->DLC);
-        printf("Data: ");
-        for (int i = 0; i < dequeuedMsg->DLC; i++) {
-                printf("%02X ", dequeuedMsg->data[i]);
-        }
-        printf("\n");
+    printf("CAN ID:%03X\n",dequeuedMsg->can_id);
+    printf("DLC: %d\n", dequeuedMsg->DLC);
+    printf("Data: ");
+    for (int i = 0; i < dequeuedMsg->DLC; i++) {
+            printf("%02X ", dequeuedMsg->data[i]);
+    }
+    printf("\n");
 }
 
 int main() {
@@ -230,4 +231,3 @@ int main() {
     close(s);
     return 0;
 }
-

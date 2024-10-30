@@ -45,11 +45,11 @@ void calc_periodic(uint32_t can_id, double timestamp) {
             double cv = get_coefficient_of_variation(stats.periodic, stddev);
             if (stddev < PERIODIC_STD_THRESHOLD && cv < PERIODIC_CV_THRESHOLD) {
                 stats.is_periodic = true;
-                //printf("1st analysis 0x%x's periodic: stddev:%.6f, cv: %.6f, true( %.6f )\n", can_id, stddev, cv, stats.periodic);
+                // printf("1st analysis 0x%x's periodic: stddev:%.6f, cv: %.6f, true( %.6f )\n", can_id, stddev, cv, stats.periodic);
 
             } else { 
                 stats.is_periodic = false;
-                //printf("1st analysis 0x%x's periodic: stddev:%.6f, cv: %.6f,false \n", can_id, stddev, cv);
+                // printf("1st analysis 0x%x's periodic: stddev:%.6f, cv: %.6f,false \n", can_id, stddev, cv);
                 
             }
         } else if (stats.count==SECOND_PERIODIC_SAMPLE_THRESHOLD){
@@ -57,11 +57,11 @@ void calc_periodic(uint32_t can_id, double timestamp) {
             double cv = get_coefficient_of_variation(stats.periodic, stddev);
             if (stddev < PERIODIC_STD_THRESHOLD && cv < PERIODIC_CV_THRESHOLD) {
                 stats.is_periodic = true;  
-                //printf("2nd analysis 0x%x's periodic: stddev:%.6f, cv: %.6f, true( %.6f )\n", can_id, stddev, cv, stats.periodic);
+                // printf("2nd analysis 0x%x's periodic: stddev:%.6f, cv: %.6f, true( %.6f )\n", can_id, stddev, cv, stats.periodic);
 
             } else { 
                 stats.is_periodic = false;
-                //printf("2nd analysis 0x%x's periodic: stddev:%.6f, cv: %.6f,false \n", can_id, stddev, cv);
+                // printf("2nd analysis 0x%x's periodic: stddev:%.6f, cv: %.6f,false \n", can_id, stddev, cv);
                 
             }
         }    
