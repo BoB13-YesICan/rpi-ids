@@ -123,7 +123,7 @@ int receive_can_frame(int s, EnqueuedCANMsg* msg) {
 }
 
 // 큐에서 메시지를 꺼내고 처리하는 함수
-void process_can_msg(const char *log_filename){
+void process_can_msg(const char *log_filename, EnqueuedCANMsg* dequeuedMsg){
     int mal_count = 0;
     FILE *logfile_whole = fopen(log_filename, "w");
     bool check = true;
@@ -136,6 +136,7 @@ void process_can_msg(const char *log_filename){
             
 	    lock.unlock();
 	    
+	    fprintf(logfile_whole, "%.6f   ", dequeuedMsg.timestamp);
 	    fprintf(logfile_whole, "can0 %03X#", dequeuedMsg.can_id);
 	    for (int i = 0; i < dequeuedMsg.DLC; i++) {
                 fprintf(logfile_whole, "%02X", dequeuedMsg.data[i]);
@@ -143,8 +144,8 @@ void process_can_msg(const char *log_filename){
 
             CANStats& stats = can_stats[dequeuedMsg.can_id];
 	    if(dequeuedMsg.timestamp - start_time <= 10){
-                fprintf(logfile_whole, " 0\n");
-                calc_periodic(dequeuedMsg.can_id, dequeuedMsg.timestamp);
+                fprintf(logfile_whole, "\n");
+		    calc_periodic(dequeuedMsg.can_id, dequeuedMsg.timestamp);
             }
             else if(check){
                 fprintf(logfile_whole, " 0\n");
@@ -162,7 +163,6 @@ void process_can_msg(const char *log_filename){
 		        fprintf(logfile_whole, " 0\n");
                 
                 onCanMessageReceived(dequeuedMsg.can_id);
-		        printf("Malicious packet! count: %d\n", mal_count++);
             }
             stats.prev_timediff = dequeuedMsg.timestamp - stats.last_timestamp;
             stats.last_timestamp = dequeuedMsg.timestamp;
@@ -200,7 +200,7 @@ int main() {
     }
 
     // 인터페이스 이름을 설정 (vcan0 사용)
-    strcpy(ifr.ifr_name, "vcan0");
+    strcpy(ifr.ifr_name, "can0");
     if (ioctl(s, SIOCGIFINDEX, &ifr) < 0) {
         perror("IOCTL error");
         return 1;
@@ -221,7 +221,7 @@ int main() {
     q_init(&canMsgQueue, sizeof(EnqueuedCANMsg), CAN_MSSG_QUEUE_SIZE, IMPLEMENTATION, false);
         
     std::thread producerThread(receive_can_frame, s, &can_msg);
-    std::thread consumerThread(process_can_msg, log_filename);
+    std::thread consumerThread(process_can_msg, log_filename, &can_msg);
     
     // Wait for the threads to finish before exiting the program
     producerThread.join();

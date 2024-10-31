@@ -99,7 +99,7 @@ bool check_onEvent(double timestamp, CANStats& stats, uint32_t can_id, uint8_t d
 }
 
 bool check_over_double_periodic(double timestamp, CANStats& stats,uint32_t can_id){
-	if(timestamp - stats.last_timestamp > stats.periodic * 5 && timestamp - stats.last_timestamp > 3) {
+	if(timestamp - stats.last_timestamp > stats.periodic * 5 && timestamp - stats.last_timestamp > 10) {
 		printf("[Suspension Attack Reason] %03x packet with a cycle time of %f minute arrived %f minutes later than the previous one. >> ", can_id, stats.periodic, timestamp - stats.last_timestamp);
 		return true;  
 	}	
