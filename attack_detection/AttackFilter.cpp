@@ -51,7 +51,7 @@ bool filtering_process(EnqueuedCANMsg* dequeuedMsg) {
 
     // 오차가 정상 주기의 2배 이상인가?
     if (check_over_double_periodic(dequeuedMsg->timestamp, stats, dequeuedMsg->can_id)) {
-        //printf("%03x Suspenstion\n", dequeuedMsg->can_id);
+        printf("%03x Suspenstion\n", dequeuedMsg->can_id);
         return malicious_packet;
     }
 
