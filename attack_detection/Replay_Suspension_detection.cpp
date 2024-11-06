@@ -21,3 +21,24 @@ bool check_over_double_periodic(double timestamp, CANStats& stats,uint32_t can_i
     }
     return false;
 }
+
+bool check_malicous_uds(CANStats& stats, uint8_t data[]){
+	if(is_uds){
+		if(dangerous_uds){
+			if(check_dbc){
+				if(is_running_car){
+					return false;
+				}
+			} else {
+				if(uds_count >10) {
+					return false;
+				}else{
+					if(prev_uds_data == data){
+						uds_count++;
+					}
+				}
+			}
+		}
+	}
+	return true;
+}
