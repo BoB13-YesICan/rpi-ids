@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -Wall -O2 -pthread -I. -I../protocol -I../attack_detection -I../core
-
+LDFLAGS = -L/usr/lib/python3.9/config-3.9-arm-linux-gnueabihf -lpython3.9
 TARGET_DIR = ../scripts
 
 # 기본 소스 파일과 오브젝트 파일

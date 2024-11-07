@@ -32,7 +32,7 @@ void timerCheckThread() {
                 auto lastReceivedTime = pair.second;
                 CANStats& stats = can_stats[canId];
                 timeout = std::chrono::seconds(static_cast<int>(stats.periodic * 10)+3);
-                if (currentTime - lastReceivedTime > timeout) {
+                if (currentTime - lastReceivedTime > timeout && stats.is_periodic) {
                     susp[canId] = 1;
                 }
             }
@@ -122,7 +122,7 @@ void process_can_msg(const char *log_filename){
 
             CANStats& stats = can_stats[dequeuedMsg.can_id];
           
-            if(dequeuedMsg.timestamp - start_time <= 40){
+            if(dequeuedMsg.timestamp - start_time <= 40&&stats.count < 201){
                 fprintf(logfile_whole, " 0\n");
                 calc_periodic(dequeuedMsg.can_id, dequeuedMsg.timestamp);
             } else if(susp[dequeuedMsg.can_id]){
@@ -130,7 +130,6 @@ void process_can_msg(const char *log_filename){
                 stats.event_count = -1;
                 stats.prev_timediff = 0;
                 printf("Suspended packet! count: %d\n", mal_count++);
-		 printf("[Suspension] [%03x] [High] %f 주기로 들어오는 %03x 패킷가 ?ms만큼 더 늦게 수신되었습니다.", dequeuedMsg.can_id, stats.periodic, dequeuedMsg.can_id);
                 fprintf(logfile_whole, " 1\n");
             } else if(check){
 	            fprintf(logfile_whole, " 0\n");

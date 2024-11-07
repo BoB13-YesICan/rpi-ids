@@ -3,6 +3,11 @@
 uint8_t DoS_payload[8];
 uint32_t DoS_can_id = 0;
 float DoS_last_time = 0;  
+std::map<uint32_t, int> debugging_dos;
+// ANSI 코드로 줄 위치 이동
+void move_cursor_up(int lines) {
+    std::cout << "\033[" << lines << "A";
+}
 
 bool check_DoS(const EnqueuedCANMsg& dequeuedMsg) {
     CANStats& stats = can_stats[dequeuedMsg.can_id];
@@ -17,15 +22,33 @@ bool check_DoS(const EnqueuedCANMsg& dequeuedMsg) {
         if (stats.suspected_count == DoS_DETECT_THRESHOLD) {
             DoS_can_id = dequeuedMsg.can_id;
             memcpy(DoS_payload, dequeuedMsg.data, sizeof(DoS_payload));
-	    printf("[DoS Attack] [%03x] [High] 5번 이상 %d개 패킷이 5ms이내 로 빠르게 동일한 페이로드로 수신되었습니다.\n", dequeuedMsg.can_id, stats.suspected_count);
+
+	    if(debugging_dos.find(dequeuedMsg.can_id)==debugging_dos.end()){
+		    debugging_dos[dequeuedMsg.can_id]=1;
+		    std::cout << "[DoS Attack] [" << std::hex << dequeuedMsg.can_id 
+			    << "] [High] 동일한 페이로드가 5번 이상 5ms 이내로 수신되었습니다. 감지횟수: "
+			    << debugging_dos[dequeuedMsg.can_id]<<"번\n";
+	    }else{
+		    debugging_dos[dequeuedMsg.can_id]++;
+		    move_cursor_up(debugging_dos.size());
+		    std::cout << "[DoS Attack] [" << std::hex << dequeuedMsg.can_id 
+			    << "] [High] 동일한 페이로드가 5번 이상 5ms 이내로 수신되었습니다. 감지횟수: "
+			    << debugging_dos[dequeuedMsg.can_id]<<"번\n";
+		    std::cout.flush();
+	    }
             return true;
         }
     }
 
     if(DoS_can_id == dequeuedMsg.can_id && memcmp(DoS_payload, dequeuedMsg.data, sizeof(DoS_payload)) == 0){
-	printf("[DoS Attack] [%03x] [High] 5ms 이내로 빠르게 들어오지는 않았지만 이전까지의 DoS Attack으로 판명된 페이로드와 비정상 주기로 수신되었습니 다.\n",dequeuedMsg.can_id);
-	DoS_last_time = dequeuedMsg.timestamp;
-        return true;
+	    debugging_dos[dequeuedMsg.can_id]++;
+	    move_cursor_up(debugging_dos.size());
+	    std::cout << "[DoS Attack] [" << std::hex << dequeuedMsg.can_id 
+		    << "] [High] 동일한 페이로드가 5번 이상 5ms 이내로 수신되었습니다. 감지횟수: "
+		    << debugging_dos[dequeuedMsg.can_id]<<"번\n";
+	    std::cout.flush();
+	    DoS_last_time = dequeuedMsg.timestamp;
+	    return true;
     }
     return false;
 }
