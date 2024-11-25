@@ -1,5 +1,6 @@
 #include "header.h"
 
+#define INTERFACE_NAME "vcan0"
 
 std::map<int, std::chrono::steady_clock::time_point> canIdTimers;
 std::mutex timerMutex;
@@ -125,6 +126,11 @@ void process_can_msg(const char *log_filename){
             if(dequeuedMsg.timestamp - start_time <= 40&&stats.count < 201){
                 fprintf(logfile_whole, " 0\n");
                 calc_periodic(dequeuedMsg.can_id, dequeuedMsg.timestamp);
+                
+                #ifdef SET_DBC_CHECK
+                calc_similarity(dequeuedMsg.can_id, dequeuedMsg.data, dequeuedMsg.DLC, stats.valid_last_data, stats.similarity_percent, stats.count);
+                #endif
+            
             } else if(susp[dequeuedMsg.can_id]){
                 susp[dequeuedMsg.can_id] = 0;
                 stats.event_count = -1;
@@ -182,7 +188,7 @@ int main(int argc, char *argv[]) {
     }
 
     // 인터페이스 이름을 설정 (vcan0 사용)
-    strcpy(ifr.ifr_name, "vcan0");
+    strcpy(ifr.ifr_name, INTERFACE_NAME);
     if (ioctl(s, SIOCGIFINDEX, &ifr) < 0) {
         perror("IOCTL error");
         return 1;
