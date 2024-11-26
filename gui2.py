@@ -20,8 +20,10 @@ class CANMonitorApp(QWidget):
             "Replay": 0,
             "Fuzzing": 0,
             "Suspension": 0,
-            "Masquerade": 0
+            "Masquerade": 0,
+            "All":0
         }
+
         # 각 공격 ID 저장
         self.attack_ids = {k: "" for k in self.attack_counts.keys()}
         self.total_attack_counts = 0
@@ -36,9 +38,9 @@ class CANMonitorApp(QWidget):
         main_layout = QVBoxLayout()
 
         # 상단 섹션 (Title)
-        title_label = QLabel("실시간 탐지!!! WARNING!")
-        title_label.setStyleSheet("font-size: 20px; font-weight: bold; text-align: center;")
-        main_layout.addWidget(title_label)
+        self.title_label = QLabel("NORMAL")
+        self.title_label.setStyleSheet("font-size: 20px; font-weight: bold; text-align: center;")
+        main_layout.addWidget(self.title_label)
 
         # 중단 섹션 (공격 카운트와 ID 표시)
         middle_layout = QGridLayout()
@@ -51,7 +53,7 @@ class CANMonitorApp(QWidget):
             label.setStyleSheet("background-color: lightgreen; border: 1px solid black; padding: 5px;")
             middle_layout.addWidget(label, i // 2, i % 2)
             self.attack_labels[attack] = label
-
+        self.attack_labels["All"].setStyleSheet("background-color: skyblue; border: 1px solid black; padding: 5px;")
         middle_widget = QWidget()
         middle_widget.setLayout(middle_layout)
         main_layout.addWidget(middle_widget)
@@ -148,31 +150,36 @@ class CANMonitorApp(QWidget):
         for attack in self.attack_counts.keys():
             if f"[{attack}]" in line:  # 출력에 공격 유형이 포함된 경우
                 self.attack_counts[attack] += 1
+                self.attack_counts["All"]+=1
                 self.update_attack_labels(attack)
                 break
         if "Malicious packet" in line:
             self.total_attack_counts+=1
 
-    # def update_attack_labels(self, attack):
-    #     """
-    #     특정 공격 유형의 카운트를 업데이트하여 레이블에 반영
-    #     """
-    #     self.attack_labels[attack].setText(f"{attack}: {self.attack_counts[attack]}")
+    # # 상단 섹션 (Title)
+    #     title_label = QLabel("실시간 탐지!!! WARNING!")
+    #     title_label.setStyleSheet("font-size: 20px; font-weight: bold; text-align: center;")
     def update_attack_labels(self, attack):
-        """
-        특정 공격 유형의 카운트를 업데이트하여 레이블에 반영하고,
-        배경색을 0.5초 동안 빨간색으로 변경.
-        """
         # 카운트 업데이트
         self.attack_labels[attack].setText(f"{attack}: {self.attack_counts[attack]}")
+        self.attack_labels["All"].setText(f"{"All"}: {self.attack_counts["All"]}")
         
         # 기존 배경색 저장
+        original_title_style="font-size: 20px; font-weight: bold; text-align: center;"
+        original_title="NORMAL"
         original_style = "background-color: lightgreen; border: 1px solid black; padding: 5px;"
         # 빨간색으로 변경
         self.attack_labels[attack].setStyleSheet("background-color: red; border: 1px solid black; padding: 5px;")
+        self.title_label.setStyleSheet("color: red; font-size: 20px; font-weight: bold; text-align: center;")
+        self.title_label.setText("WARNING!!!")
 
+        # 0.5초 후 스타일 복원
+        def restore_styles():
+            self.attack_labels[attack].setStyleSheet(original_style)
+            self.title_label.setStyleSheet(original_title_style)
+            self.title_label.setText(original_title)
         # 0.5초 후 원래 색상으로 복원
-        QTimer.singleShot(500, lambda: self.attack_labels[attack].setStyleSheet(original_style))
+        QTimer.singleShot(500, restore_styles)
 
     def update_log(self):
         # 로그 파일 내용을 읽어와 GUI에 표시
