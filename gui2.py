@@ -2,13 +2,10 @@ import os
 import subprocess
 import threading
 import re
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QTextEdit, QLabel, QPushButton, QWidget, QGridLayout, QGroupBox, QScrollArea, QMainWindow
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QTextEdit, QLabel, QPushButton, QWidget, QGridLayout, QDialog,  QScrollArea, QMainWindow
 from PyQt5.QtCore import QTimer, pyqtSignal, Qt, QMargins
 from PyQt5.QtChart import QChart, QChartView, QPieSeries
 from PyQt5.QtGui import QPainter
-
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 
 # Qt 환경 설정
@@ -41,6 +38,7 @@ class CANMonitorApp(QWidget):
 
         # 각 공격 ID 저장
         self.attack_ids = {k: "" for k in self.attack_id_counts.keys()}
+        self.total_counts=0
         self.total_attack_counts = 0
         self.initUI()
         self.c_process = None
@@ -129,7 +127,8 @@ class CANMonitorApp(QWidget):
         # Create a QPieSeries
         series = QPieSeries()
         for attack, count in self.attack_counts.items():
-            series.append(f"{attack}: {count}", count)
+            if attack != "All":
+                series.append(f"{attack}: {count}", count)
 
         # Create a chart and set its title
         chart = QChart()
@@ -162,7 +161,8 @@ class CANMonitorApp(QWidget):
         # Create a new QPieSeries
         series = QPieSeries()
         for attack, count in self.attack_counts.items():
-            series.append(f"{attack}: {count}", count)
+            if attack != "All":
+                series.append(f"{attack}: {count}", count)
 
         # Add the new series to the chart
         chart.addSeries(series)
@@ -171,8 +171,65 @@ class CANMonitorApp(QWidget):
         chart.legend().setAlignment(Qt.AlignRight)  # 범례를 오른쪽에 정렬
 
     def show_detection_detail(self):
-        print(self.attack_id_counts)
-        
+        # 새 창 생성
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Detection Details")
+        dialog.setGeometry(300, 300, 800, 600)
+
+        # 메인 레이아웃 설정
+        main_layout = QVBoxLayout()
+
+        # 공격별 상세 정보 표시
+        for attack_type, attack_data in self.attack_id_counts.items():
+            if not attack_data:  # 데이터가 없는 경우 넘어감
+                continue
+
+            # 제목 표시
+            title_label = QLabel(f"Attack Type: {attack_type}")
+            title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px 0;")
+            main_layout.addWidget(title_label)
+
+            # 원형 그래프 생성 및 추가
+            chart_view = self.create_attack_pie_chart(attack_type, attack_data)
+            main_layout.addWidget(chart_view)
+
+        # 스크롤 영역 설정 (그래프가 많아질 경우 대비)
+        scroll_area = QScrollArea()
+        scroll_widget = QWidget()
+        scroll_widget.setLayout(main_layout)
+        scroll_area.setWidget(scroll_widget)
+        scroll_area.setWidgetResizable(True)
+
+        # 다이얼로그 레이아웃 설정
+        dialog_layout = QVBoxLayout()
+        dialog_layout.addWidget(scroll_area)
+        dialog.setLayout(dialog_layout)
+
+        # 다이얼로그 표시
+        dialog.exec_()
+
+    def create_attack_pie_chart(self, attack_type, attack_data):
+        """
+        공격 유형별 데이터를 기반으로 원형 그래프 생성
+        """
+        series = QPieSeries()
+        for attack_id, count in attack_data.items():
+            series.append(f"{attack_id}: {count}", count)
+
+        # 차트 설정
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle(f"{attack_type} Attack Details")
+        chart.setMargins(QMargins(10, 10, 10, 10))
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(Qt.AlignRight)
+
+        # 차트 뷰 생성
+        chart_view = QChartView(chart)
+        chart_view.setRenderHint(QPainter.Antialiasing)
+        chart_view.setMinimumSize(600, 400)
+
+        return chart_view
     # 나머지 함수는 기존 코드와 동일
     def start_monitoring(self):
         if not os.path.exists(self.c_program_path):#C 프로그램 파일이 존재하는지 확인.
@@ -217,6 +274,7 @@ class CANMonitorApp(QWidget):
         self.parse_attack(text)  # 공격 분석
 
     def parse_attack(self, line):
+        
         """
         표준 출력에서 공격 유형을 파싱하고, 카운트를 업데이트
         """
@@ -237,9 +295,11 @@ class CANMonitorApp(QWidget):
             self.attack_id_counts[attack_type][attack_id] += 1  # count가 없으면 증가
             self.attack_counts[attack_type]+=1
             self.attack_counts["All"]+=1
+            self.total_attack_counts+=1
             
             self.update_attack_labels(attack_type)
         else:print("Not parse attack info")
+    
 
         # for attack in self.attack_counts.keys():
         #     if f"[{attack}]" in line:  # 출력에 공격 유형이 포함된 경우
@@ -255,7 +315,7 @@ class CANMonitorApp(QWidget):
         # 카운트 업데이트
         self.attack_labels[attack].setText(f"{attack}: {self.attack_counts[attack]}")
         self.attack_labels["All"].setText(f"{"All"}: {self.attack_counts["All"]}")
-        print("label update "+attack)
+        # print("label update "+attack)
         # 기존 배경색 저장
         original_title_style="font-size: 20px; font-weight: bold; text-align: center;"
         original_title="NORMAL"

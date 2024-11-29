@@ -62,7 +62,7 @@ bool check_similarity_with_previous_packet(uint32_t can_id, uint8_t data[8], int
         if ((total_same_percent / total_length) >= percent) { //수용치
             return true;
         } else {
-            printf("[?] [%03x] [Medium] 이전 패킷간의 유사성이 %.6f%%만큼 낮습니다.\n", can_id, total_same_percent/total_length);
+            printf("[Fuzzing] [%03x] [Medium] 이전 패킷간의 유사성이 %.6f%%만큼 낮습니다.\n", can_id, total_same_percent/total_length);
             return false;
         }
     }else{
@@ -71,7 +71,7 @@ bool check_similarity_with_previous_packet(uint32_t can_id, uint8_t data[8], int
     }
 
     is_Attack = 3;
-    printf("[?] [%03x] [High] DBC파일에 정의된 ID가 아닙니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
+    printf("[Fuzzing] [%03x] [High] DBC파일에 정의된 ID가 아닙니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
     return false;
 }
 
@@ -105,7 +105,7 @@ bool validation_check(uint32_t can_id, uint8_t* data, int DLC) {
 			            return true;
                     } else {
                         is_Attack = 3;
-                        printf("[?] [%03x] [High] DBC파일의 정의역에 존재하지 않은 페이로드입니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
+                        printf("[Fuzzing] [%03x] [High] DBC파일의 정의역에 존재하지 않은 페이로드입니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
                         return false;
                     }
                 }
@@ -117,12 +117,12 @@ bool validation_check(uint32_t can_id, uint8_t* data, int DLC) {
             }
         } else {
             is_Attack = 3;
-            printf("[?] [%03x] [High] DBC파일에 정의된 DLC와 다릅니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
+            printf("[Fuzzing] [%03x] [High] DBC파일에 정의된 DLC와 다릅니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
             return false;
         }
     }
     is_Attack = 3;
-    printf("[?] [%03x] [High] DBC파일에 정의된 ID가 아닙니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
+    printf("[Fuzzing] [%03x] [High] DBC파일에 정의된 ID가 아닙니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
     return false;
 }
 
@@ -175,7 +175,7 @@ void calc_similarity(uint32_t can_id, uint8_t data[8], int DLC, uint8_t valid_pa
     }
       return;
     }
-    printf("[?] [%03x] [High] DBC파일에 정의된 ID가 아닙니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
+    printf("[Fuzzing] [%03x] [High] DBC파일에 정의된 ID가 아닙니다. Fuzzing 혹은 DoS 공격입니다.\n", can_id);
     return;
 }
 

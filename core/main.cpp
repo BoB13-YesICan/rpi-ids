@@ -144,7 +144,8 @@ void process_can_msg(const char *log_filename){
                 stats.event_count = -1;
                 stats.prev_timediff = 0;
                 fprintf(logfile_whole, " 1\n");
-                printf("Malicious packet! count: %d\n", mal_count++);
+                // printf("Malicious packet! count: %d\n", mal_count++);
+                mal_count++;
             } else{
                 onCanMessageReceived(dequeuedMsg.can_id);
                 fprintf(logfile_whole, " 0\n");
