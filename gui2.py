@@ -1,8 +1,15 @@
 import os
 import subprocess
 import threading
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QTextEdit, QLabel, QPushButton, QWidget, QGridLayout, QGroupBox
-from PyQt5.QtCore import QTimer, pyqtSignal
+import re
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QTextEdit, QLabel, QPushButton, QWidget, QGridLayout, QGroupBox, QScrollArea, QMainWindow
+from PyQt5.QtCore import QTimer, pyqtSignal, Qt, QMargins
+from PyQt5.QtChart import QChart, QChartView, QPieSeries
+from PyQt5.QtGui import QPainter
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 
 # Qt 환경 설정
 os.environ["QT_QPA_PLATFORM"] = "xcb" #
@@ -15,6 +22,14 @@ class CANMonitorApp(QWidget):
         self.stdout_signal.connect(self.update_stdout)  # 신호를 슬롯에 연결
         self.c_program_path = c_program_path  # C 프로그램 실행 파일 경로
         self.log_filename = log_filename      # 로그 파일 이름
+        self.attack_id_counts = {  # 공격별 카운트를 저장하는 딕셔너리
+            "DoS": {},
+            "Replay": {},
+            "Fuzzing": {},
+            "Suspension": {},
+            "Masquerade": {},
+        }
+
         self.attack_counts = {  # 공격별 카운트를 저장하는 딕셔너리
             "DoS": 0,
             "Replay": 0,
@@ -25,7 +40,7 @@ class CANMonitorApp(QWidget):
         }
 
         # 각 공격 ID 저장
-        self.attack_ids = {k: "" for k in self.attack_counts.keys()}
+        self.attack_ids = {k: "" for k in self.attack_id_counts.keys()}
         self.total_attack_counts = 0
         self.initUI()
         self.c_process = None
@@ -47,7 +62,6 @@ class CANMonitorApp(QWidget):
 
         # 공격별 카운트와 ID
         self.attack_labels = {}
-        # attack_types = ["공격 패킷 갯수", "DoS [ID]", "Replay [ID]", "Fuzzing [ID]", "Suspension [ID]", "Masquerade [ID]"]
         for i, attack in enumerate(self.attack_counts.keys()):
             label = QLabel(f"{attack}: 0")
             label.setStyleSheet("background-color: lightgreen; border: 1px solid black; padding: 5px;")
@@ -57,6 +71,10 @@ class CANMonitorApp(QWidget):
         middle_widget = QWidget()
         middle_widget.setLayout(middle_layout)
         main_layout.addWidget(middle_widget)
+
+        # 원형 그래프 추가
+        self.chart_view = self.create_pie_chart()
+        main_layout.addWidget(self.chart_view)
 
         # 중앙 섹션 (로그 출력 영역)
         log_layout = QHBoxLayout()
@@ -89,6 +107,10 @@ class CANMonitorApp(QWidget):
         self.stop_button.clicked.connect(self.stop_monitoring)
         button_layout.addWidget(self.stop_button)
 
+        self.graph_button=QPushButton("Graph")
+        self.graph_button.clicked.connect(self.show_detection_detail)
+        button_layout.addWidget(self.graph_button)
+
         button_widget = QWidget()
         button_widget.setLayout(button_layout)
         main_layout.addWidget(button_widget)
@@ -100,6 +122,57 @@ class CANMonitorApp(QWidget):
         self.log_timer = QTimer(self)
         self.log_timer.timeout.connect(self.update_log)
 
+    def create_pie_chart(self):
+        """
+        Create and return a QChartView containing a pie chart.
+        """
+        # Create a QPieSeries
+        series = QPieSeries()
+        for attack, count in self.attack_counts.items():
+            series.append(f"{attack}: {count}", count)
+
+        # Create a chart and set its title
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle("Attack Count Distribution")
+        chart.setMargins(QMargins(10, 10, 10, 10))  # 여백 설정
+        chart.setMinimumSize(600, 400)  # 그래프 크기 설정
+
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(Qt.AlignRight)
+        # chart.legend().setOrientation(Qt.Vertical)  # 세로 방향으로 나열
+
+        # Create a QChartView to display the chart
+        chart_view = QChartView(chart)
+        chart_view.setRenderHint(QPainter.Antialiasing)
+        chart_view.setMinimumSize(700, 500)  # 차트 뷰 크기 설정
+
+        return chart_view
+    
+    def update_pie_chart(self):
+        """
+        Update the pie chart based on the current attack counts.
+        """
+        # Get the current chart from the chart view
+        chart = self.chart_view.chart()
+
+        # Clear the old series
+        chart.removeAllSeries()
+
+        # Create a new QPieSeries
+        series = QPieSeries()
+        for attack, count in self.attack_counts.items():
+            series.append(f"{attack}: {count}", count)
+
+        # Add the new series to the chart
+        chart.addSeries(series)
+        # Ensure legend remains visible
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(Qt.AlignRight)  # 범례를 오른쪽에 정렬
+
+    def show_detection_detail(self):
+        print(self.attack_id_counts)
+        
     # 나머지 함수는 기존 코드와 동일
     def start_monitoring(self):
         if not os.path.exists(self.c_program_path):#C 프로그램 파일이 존재하는지 확인.
@@ -147,23 +220,42 @@ class CANMonitorApp(QWidget):
         """
         표준 출력에서 공격 유형을 파싱하고, 카운트를 업데이트
         """
-        for attack in self.attack_counts.keys():
-            if f"[{attack}]" in line:  # 출력에 공격 유형이 포함된 경우
-                self.attack_counts[attack] += 1
-                self.attack_counts["All"]+=1
-                self.update_attack_labels(attack)
-                break
+        attack_match = re.search(r"\[(\w+)\] \[(\d+)\] \[(\w+)\] (.+)", line)
+
+        if attack_match:
+            attack_type = attack_match.group(1)  # 예: DoS
+            attack_id = attack_match.group(2)   # 예: 000
+            if attack_type not in self.attack_counts:
+                print(attack_type+"is not in self.attack_counts")
+                return 
+            if attack_type not in self.attack_id_counts:
+                print("Not attack_type "+ attack_type)
+                return
+            if attack_id not in self.attack_id_counts[attack_type]:
+                print("New Detection ID "+attack_id)
+                self.attack_id_counts[attack_type][attack_id] = 0
+            self.attack_id_counts[attack_type][attack_id] += 1  # count가 없으면 증가
+            self.attack_counts[attack_type]+=1
+            self.attack_counts["All"]+=1
+            
+            self.update_attack_labels(attack_type)
+        else:print("Not parse attack info")
+
+        # for attack in self.attack_counts.keys():
+        #     if f"[{attack}]" in line:  # 출력에 공격 유형이 포함된 경우
+        #         self.attack_counts[attack] += 1
+        #         self.attack_counts["All"] += 1
+        #         self.update_attack_labels(attack)
+        #         break
+
         if "Malicious packet" in line:
             self.total_attack_counts+=1
 
-    # # 상단 섹션 (Title)
-    #     title_label = QLabel("실시간 탐지!!! WARNING!")
-    #     title_label.setStyleSheet("font-size: 20px; font-weight: bold; text-align: center;")
     def update_attack_labels(self, attack):
         # 카운트 업데이트
         self.attack_labels[attack].setText(f"{attack}: {self.attack_counts[attack]}")
         self.attack_labels["All"].setText(f"{"All"}: {self.attack_counts["All"]}")
-        
+        print("label update "+attack)
         # 기존 배경색 저장
         original_title_style="font-size: 20px; font-weight: bold; text-align: center;"
         original_title="NORMAL"
@@ -180,6 +272,8 @@ class CANMonitorApp(QWidget):
             self.title_label.setText(original_title)
         # 0.5초 후 원래 색상으로 복원
         QTimer.singleShot(500, restore_styles)
+        # Update the pie chart
+        self.update_pie_chart()
 
     def update_log(self):
         # 로그 파일 내용을 읽어와 GUI에 표시
