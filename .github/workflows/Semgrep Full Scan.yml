@@ -40,4 +40,4 @@ jobs:
         - name: Download report
           uses: actions/download-artifact@v3
           with: 
-            name: report.sarif
+            name: report.json
