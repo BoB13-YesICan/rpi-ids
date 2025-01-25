@@ -1,13 +1,25 @@
 name: "Build test"
-on:
-  workflow_dispatch:
+on: push
 
 jobs:
-  build:
+  build-ids:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./scripts  # 스크립트 디렉토리로 설정
+        working-directory: ./scripts
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: "Build the ids"
+      run: |
+        sudo make
+
+  build-ml:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./scripts
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -17,15 +29,21 @@ jobs:
       with:
         python-version: '3.9'
   
-    - name: Create Venv
+    - name: Create Venv and Install dependencies
       run: |
         python -m venv .venv
-        
-    - name: "Install dependencies"
-      run: |
         .venv/bin/pip install --upgrade pip
         .venv/bin/pip install -r ./requirements.txt
         
-    - name: "Build the source"
+    - name: Prepare test log file
       run: |
-        sudo ./run.sh
+        echo "(1698229877.009325) can0 4F1#803866F0 0" > test.log
+
+    - name: Run intrusion detection (test mode)
+      run: |
+        .venv/bin/python3 model_xgboost.py test.log test_out.log
+
+    - name: Check result
+      run: |
+        cat test_out.log
+        rm test_out.log
