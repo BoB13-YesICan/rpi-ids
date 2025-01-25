@@ -69,7 +69,7 @@ else
     output_log_file_path=$(date +"../log/%Y-%m-%d_%H-%M-%S_after_AI.log")
 
     # AI Python 코드 실행
-    python3 model_xgboost.py "$log_filename" "$output_log_file_path" &
+    .venv/bin/python3 model_xgboost.py "$log_filename" "$output_log_file_path" &
     model_pid=$!
 
     echo "Executing ./ids with log file: $log_filename"
