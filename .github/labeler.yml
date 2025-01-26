@@ -1,0 +1,19 @@
+# Pull Request 제목 기반 레이블링
+bug:
+  - 'Fix:*'
+  - 'Bug:*'
+
+# Pull Request 본문 내용 기반 레이블링
+enhancement:
+  - 'Feat:*'
+  - '**enhancement**'
+  - '**improvement**'
+
+# Issue 제목 기반 레이블링
+documentation:
+  - 'Docs:*'
+  - 'Comment:*'
+
+test:
+  - 'Test:*'
+  - '**testing**'
