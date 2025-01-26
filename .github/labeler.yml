@@ -7,11 +7,6 @@ enhancement:
   - '**enhancement**'
   - '**improvement**'
 
-enhancement:
-  - '**Feat:**'
-  - '**enhancement**'
-  - '**improvement**'
-
 documentation:
   - 'Docs:*'
   - 'Comment:*'
