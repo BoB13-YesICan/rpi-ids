@@ -1,0 +1,36 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+version-resolver:
+  minor:
+    labels:
+      - "enhancement"
+  default: patch
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+change-title-escapes: "\\`*_"
+no-changes-template: "*No changes in this release.*"
+
+categories:
+  - title: 🚀 Features
+    labels:
+      - "enhancement"
+      - "feature"
+  - title: 🐛 Bug Fixes
+    labels:
+      - "bug"
+      - "fix"
+  - title: 🧹 Maintenance
+    labels:
+      - "chore"
+      - "refactor"
+  - title: 📝 Documentation
+    labels:
+      - "docs"
+      - "documentation"
+
+template: |
+  ## Changes
+  $CHANGES
+
+  ## Contributors
+  Thanks to everyone who contributed to this release:
+  $CONTRIBUTORS
