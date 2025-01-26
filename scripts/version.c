@@ -3,8 +3,8 @@
 #include <stdio.h>
 
 #ifdef linux
-int JenkinsBuilderFileVersion[4] attribute((section ("FileVersion"))) = { 2,0,2,51 };
-int JenkinsBuilderProductVersion[4] attribute((section ("ProductVersion"))) = { 2024,11,25,51 };
+int JenkinsBuilderFileVersion[4] __attribute__((section ("FileVersion"))) = { 2,0,2,51 };
+int JenkinsBuilderProductVersion[4] __attribute__((section ("ProductVersion"))) = { 2024,11,25,51 };
 #endif
 
 int main(int nArgc, char** pszArgv)
