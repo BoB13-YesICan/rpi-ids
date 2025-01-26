@@ -4,7 +4,7 @@ on:
     types: [closed]
 jobs:
   draft-release:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true && github.base_ref == 'develop'
     steps:
       - name: Release drafter
