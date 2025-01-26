@@ -3,11 +3,6 @@ bug:
   - 'Bug:*'
 
 enhancement:
-  - 'Feat:*'
-  - '**enhancement**'
-  - '**improvement**'
-
-enhancement:
   - '**Feat:**'
   - '**enhancement**'
   - '**improvement**'
