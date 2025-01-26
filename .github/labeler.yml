@@ -1,0 +1,16 @@
+bug:
+  - 'Fix:*'
+  - 'Bug:*'
+
+enhancement:
+  - '**Feat:**'
+  - '**enhancement**'
+  - '**improvement**'
+
+documentation:
+  - 'Docs:*'
+  - 'Comment:*'
+
+test:
+  - 'Test:*'
+  - '**testing**'
