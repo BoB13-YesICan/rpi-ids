@@ -1,0 +1,51 @@
+name: "Build test"
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  build-ids:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./scripts
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: "Build the ids"
+      run: |
+        sudo make
+
+  build-ml:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./scripts
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+  
+    - name: Create Venv and Install dependencies
+      run: |
+        python -m venv .venv
+        .venv/bin/pip install --upgrade pip
+        .venv/bin/pip install -r ./requirements.txt
+        
+    - name: Prepare test log file
+      run: |
+        echo "(1698229877.009325) can0 4F1#803866F0 0" > test.log
+
+    - name: Run intrusion detection (test mode)
+      run: |
+        .venv/bin/python3 model_xgboost.py test.log test_out.log
+
+    - name: Check result
+      run: |
+        cat test_out.log
+        rm test_out.log

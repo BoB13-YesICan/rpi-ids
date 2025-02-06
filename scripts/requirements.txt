@@ -1,6 +1,5 @@
-numpy
+numpy<2
 tflite-runtime
 python-can
 matplotlib
 pandas
-
