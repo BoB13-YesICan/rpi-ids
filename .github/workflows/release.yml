@@ -57,8 +57,7 @@ jobs:
           git log --pretty=format:"- %h %s (%an)" -10 >> release_notes.md
           echo "" >> release_notes.md
           echo "### 🔹 Contributor Stats" >> release_notes.md
-          # git shortlog -sn >> release_notes.md
-          git log --format='%an' | sort | uniq -c | sort -nr >> release_notes.md
+          git log --format='%ae' | sort | uniq -c | sort -nr >> release_notes.md
 
 
       - name: "🚀 Publish GitHub Release"
