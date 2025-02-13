@@ -2,6 +2,10 @@ name: Draft Release
 on:
   pull_request:
     types: [closed]
+
+permissions:
+  contents: write
+
 jobs:
   draft-release:
     runs-on: ubuntu-18.04
