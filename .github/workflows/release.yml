@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: "📥 Checkout Repository"
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 모든 Git 히스토리를 가져옴
 
       - name: "🔍 Load Previous Version & Generate New Version"
         run: |
