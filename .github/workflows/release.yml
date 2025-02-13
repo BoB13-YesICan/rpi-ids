@@ -1,0 +1,68 @@
+name: "Automated Versioning & Release"
+
+on:
+  push:
+    branches:
+      - main  # `main` 브랜치에 push 될 때 실행
+      - develop
+
+permissions:
+  contents: write   # ✅ GitHub Releases 생성/업데이트 가능하도록 설정
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "📥 Checkout Repository"
+        uses: actions/checkout@v3
+
+      - name: "🔍 Load Previous Version & Generate New Version"
+        run: |
+          DATE=$(date +'%Y.%m.%d')  # 현재 날짜 가져오기 (YYYY.MM.DD)
+          PREV_VERSION=$(cat version.txt 2>/dev/null || echo "$DATE.0")  # 기존 버전 불러오기
+          PREV_DATE=$(echo $PREV_VERSION | cut -d. -f1-3)  # 기존 버전의 날짜 부분 추출
+          PREV_BUILD=$(echo $PREV_VERSION | cut -d. -f4)  # 기존 버전의 빌드 숫자 추출
+
+          if [ "$PREV_DATE" == "$DATE" ]; then
+            NEW_BUILD=$((PREV_BUILD + 1))  # 같은 날짜면 빌드 번호 증가
+          else
+            NEW_BUILD=1  # 새로운 날짜면 빌드 번호 초기화
+          fi
+
+          NEW_VERSION="$DATE.$NEW_BUILD"
+          echo $NEW_VERSION > version.txt
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: "🔄 Commit Updated Version"
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add version.txt
+          git commit -m "🔄 Update version to ${{ env.NEW_VERSION }}"
+          git push origin develop
+
+      - name: "🏷 Create GitHub Tag"
+        run: |
+          git tag -a v${{ env.NEW_VERSION }} -m "Release version ${{ env.NEW_VERSION }}"
+          git push origin v${{ env.NEW_VERSION }}
+
+      - name: "📜 Generate Release Notes"
+        run: |
+          echo "## Release Notes for v${{ env.NEW_VERSION }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "### 🔹 Recent Commits" >> release_notes.md
+          git log --pretty=format:"- %h %s (%an)" -10 >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### 🔹 Contributor Stats" >> release_notes.md
+          git shortlog -sn >> release_notes.md
+
+
+      - name: "🚀 Publish GitHub Release"
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.NEW_VERSION }}
+          name: "Release v${{ env.NEW_VERSION }}"
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
